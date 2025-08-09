@@ -4,7 +4,6 @@ import type { Team, Player } from '@/types';
 import PlayerCard from '@/components/player-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AnalysisCard from '@/components/analysis-card';
 import { RefreshCw, Users } from 'lucide-react';
 
 interface DashboardProps {
@@ -77,8 +76,6 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
           ))}
         </div>
       </div>
-      
-      <AnalysisCard team={team} />
     </div>
   );
 }
