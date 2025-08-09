@@ -27,10 +27,10 @@ export default function AnalysisCard({ team }: AnalysisCardProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="text-primary" />
-          Performance Analysis
+          Analisi della Performance
         </CardTitle>
         <CardDescription>
-          Get AI-powered insights and suggestions based on the current stats.
+          Ottieni spunti e suggerimenti basati sull'IA in base alle statistiche attuali.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -43,10 +43,10 @@ export default function AnalysisCard({ team }: AnalysisCardProps) {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
+              Analisi in corso...
             </>
           ) : (
-             'Analyze Performance'
+             'Analizza Performance'
           )}
         </Button>
       </CardContent>

@@ -36,7 +36,7 @@ const BasketballIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function TeamSetup({ onSetupComplete }: TeamSetupProps) {
   const [teamName, setTeamName] = useState('');
-  const [players, setPlayers] = useState<string[]>(['Player 1']);
+  const [players, setPlayers] = useState<string[]>(['Giocatore 1']);
   const { toast } = useToast();
 
   const handlePlayerNameChange = (index: number, name: string) => {
@@ -46,15 +46,15 @@ export default function TeamSetup({ onSetupComplete }: TeamSetupProps) {
   };
 
   const addPlayer = () => {
-    setPlayers([...players, `Player ${players.length + 1}`]);
+    setPlayers([...players, `Giocatore ${players.length + 1}`]);
   };
 
   const removePlayer = (index: number) => {
     if (players.length <= 1) {
        toast({
         variant: "destructive",
-        title: "Cannot remove player",
-        description: "You must have at least one player.",
+        title: "Impossibile rimuovere il giocatore",
+        description: "Devi avere almeno un giocatore.",
       })
       return;
     }
@@ -70,16 +70,16 @@ export default function TeamSetup({ onSetupComplete }: TeamSetupProps) {
     if (!trimmedTeamName) {
        toast({
         variant: "destructive",
-        title: "Invalid team name",
-        description: "Please enter a name for your team.",
+        title: "Nome squadra non valido",
+        description: "Per favore, inserisci un nome per la tua squadra.",
       })
       return;
     }
     if (filteredPlayers.length === 0) {
       toast({
         variant: "destructive",
-        title: "No players added",
-        description: "Please add at least one player.",
+        title: "Nessun giocatore aggiunto",
+        description: "Per favore, aggiungi almeno un giocatore.",
       })
       return;
     }
@@ -90,50 +90,50 @@ export default function TeamSetup({ onSetupComplete }: TeamSetupProps) {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
       <div className="text-center mb-8">
         <BasketballIcon className="mx-auto h-16 w-16 text-primary" />
-        <h1 className="text-4xl font-bold mt-4">Basket Stats Keeper</h1>
-        <p className="text-muted-foreground mt-2">Set up your team to start tracking live game stats.</p>
+        <h1 className="text-4xl font-bold mt-4">Segnapunti Basket</h1>
+        <p className="text-muted-foreground mt-2">Configura la tua squadra per iniziare a tracciare le statistiche di gioco in tempo reale.</p>
       </div>
       <Card className="w-full max-w-lg">
         <form onSubmit={handleSubmit}>
           <CardHeader>
-            <CardTitle>Team Setup</CardTitle>
-            <CardDescription>Enter your team name and add your players.</CardDescription>
+            <CardTitle>Configurazione Squadra</CardTitle>
+            <CardDescription>Inserisci il nome della tua squadra e aggiungi i tuoi giocatori.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="teamName">Team Name</Label>
+              <Label htmlFor="teamName">Nome Squadra</Label>
               <Input 
                 id="teamName" 
-                placeholder="e.g., The All-Stars" 
+                placeholder="es. Le All-Stars" 
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-3">
-              <Label>Players</Label>
+              <Label>Giocatori</Label>
               {players.map((player, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input 
-                    placeholder={`Player ${index + 1} Name`}
+                    placeholder={`Nome Giocatore ${index + 1}`}
                     value={player}
                     onChange={(e) => handlePlayerNameChange(index, e.target.value)}
                   />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removePlayer(index)}>
                     <X className="h-4 w-4" />
-                    <span className="sr-only">Remove Player</span>
+                    <span className="sr-only">Rimuovi Giocatore</span>
                   </Button>
                 </div>
               ))}
                <Button type="button" variant="outline" onClick={addPlayer} className="w-full">
-                <Plus className="mr-2 h-4 w-4" /> Add Player
+                <Plus className="mr-2 h-4 w-4" /> Aggiungi Giocatore
               </Button>
             </div>
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full">
               <Users className="mr-2 h-4 w-4" />
-              Start Tracking Stats
+              Inizia a Tracciare le Statistiche
             </Button>
           </CardFooter>
         </form>

@@ -37,11 +37,11 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
     <Card className="flex flex-col">
       <CardHeader>
         <CardTitle>{player.name}</CardTitle>
-        <CardDescription>Points: <span className="text-2xl font-bold text-primary">{player.stats.points}</span></CardDescription>
+        <CardDescription>Punti: <span className="text-2xl font-bold text-primary">{player.stats.points}</span></CardDescription>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         <div>
-          <p className="mb-2 font-medium">Score Points</p>
+          <p className="mb-2 font-medium">Segna Punti</p>
           <div className="grid grid-cols-3 gap-2">
             <Button variant="secondary" onClick={() => handleStatChange('points', 1)}>+1 PT</Button>
             <Button variant="secondary" onClick={() => handleStatChange('points', 2)}>+2 PTS</Button>
@@ -50,9 +50,9 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
         </div>
         
         <div className="space-y-3 pt-2">
-            <StatRow label="Assists" value={player.stats.assists} onIncrement={() => handleStatChange('assists', 1)} onDecrement={() => handleStatChange('assists', -1)} />
-            <StatRow label="Rebounds" value={player.stats.rebounds} onIncrement={() => handleStatChange('rebounds', 1)} onDecrement={() => handleStatChange('rebounds', -1)} />
-            <StatRow label="Fouls" value={player.stats.fouls} onIncrement={() => handleStatChange('fouls', 1)} onDecrement={() => handleStatChange('fouls', -1)} />
+            <StatRow label="Assist" value={player.stats.assists} onIncrement={() => handleStatChange('assists', 1)} onDecrement={() => handleStatChange('assists', -1)} />
+            <StatRow label="Rimbalzi" value={player.stats.rebounds} onIncrement={() => handleStatChange('rebounds', 1)} onDecrement={() => handleStatChange('rebounds', -1)} />
+            <StatRow label="Falli" value={player.stats.fouls} onIncrement={() => handleStatChange('fouls', 1)} onDecrement={() => handleStatChange('fouls', -1)} />
         </div>
 
       </CardContent>

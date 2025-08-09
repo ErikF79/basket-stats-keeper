@@ -20,14 +20,14 @@ const summarizeStatsFlow = ai.defineFlow(
   },
   async (stats) => {
     const prompt = `
-      Analyze the following basketball game statistics and provide a brief summary and suggestions for improvement.
-      The team is "${stats.name}".
-      The player stats are:
-      ${stats.players.map(p => `- ${p.name}: ${p.stats.points} pts, ${p.stats.assists} ast, ${p.stats.rebounds} reb, ${p.stats.fouls} fouls`).join('\n')}
+      Analizza le seguenti statistiche di una partita di basket e fornisci un breve riassunto e suggerimenti per migliorare.
+      La squadra si chiama "${stats.name}".
+      Le statistiche dei giocatori sono:
+      ${stats.players.map(p => `- ${p.name}: ${p.stats.points} punti, ${p.stats.assists} assist, ${p.stats.rebounds} rimbalzi, ${p.stats.fouls} falli`).join('\n')}
 
-      Focus on key performances (high scorers, all-around players) and potential areas of concern (e.g., high fouls, low rebounds).
-      Keep the summary concise and actionable.
-      Format the output as markdown with headings for "Summary" and "Suggestions".
+      Concentrati sulle prestazioni chiave (migliori marcatori, giocatori a tutto tondo) e sulle potenziali aree di preoccupazione (ad es. falli elevati, pochi rimbalzi).
+      Mantieni il riassunto conciso e pratico.
+      Formatta l'output come markdown con intestazioni per "Riepilogo" e "Suggerimenti".
     `;
 
     const llmResponse = await ai.generate({
