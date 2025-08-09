@@ -40,10 +40,18 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
         }
         break;
       case 'assist':
+        newEvent = { type: 'assist', x, y };
+        newStats.assists++;
+        newStats.events.push(newEvent);
+        break;
       case 'rebound':
+        newEvent = { type: 'rebound', x, y };
+        newStats.rebounds++;
+        newStats.events.push(newEvent);
+        break;
       case 'foul':
-        newEvent = { type: activeAction.type, x, y };
-        newStats[activeAction.type]++;
+        newEvent = { type: 'foul', x, y };
+        newStats.fouls++;
         newStats.events.push(newEvent);
         break;
     }
@@ -52,13 +60,20 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
     setActiveAction(null);
   };
   
-  const handleUndo = (stat: keyof Omit<Player['stats'], 'events' | 'points'>) => {
+  const handleUndo = (stat: 'assists' | 'rebounds' | 'fouls' | 'missed_shots') => {
     const newStats = { ...player.stats };
-    const lastEventIndex = newStats.events.findLastIndex(e => e.type === stat);
+    const statToEventMap = {
+        'assists': 'assist',
+        'rebounds': 'rebound',
+        'fouls': 'foul',
+        'missed_shots': 'missed_shot'
+    }
+    const eventType = statToEventMap[stat];
+    const lastEventIndex = newStats.events.findLastIndex(e => e.type === eventType);
     
     if(lastEventIndex > -1) {
       newStats.events.splice(lastEventIndex, 1);
-      newStats[stat] = newStats.events.filter(e => e.type === stat).length;
+      newStats[stat] = newStats.events.filter(e => e.type === eventType).length;
       onUpdateStats(newStats);
     }
   };
@@ -136,6 +151,15 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
                     <Button variant={activeAction?.type === 'foul' ? 'default' : 'outline'} size="icon" className="h-7 w-7" onClick={() => handleActionSelection('foul')}>
                         <Plus className="h-4 w-4" />
                     </Button>
+                </div>
+            </div>
+             <div className="flex items-center justify-between">
+                <p className="font-medium">Tiri Sbagliati</p>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleUndo('missed_shots')} disabled={!player.stats.events.some(e => e.type === 'missed_shot')}>
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center font-mono text-lg">{player.stats.missed_shots}</span>
                 </div>
             </div>
         </div>
