@@ -1,12 +1,11 @@
 'use server';
 
-import { run } from '@genkit-ai/next/server';
-import { summarizeStatsFlow } from '@/ai/flows/stats';
+import { summarizeStats } from '@/ai/flows/stats';
 import type { Team } from '@/types';
 
 export async function getAnalysis(teamData: Team): Promise<string> {
   try {
-    const result = await run(summarizeStatsFlow, teamData);
+    const result = await summarizeStats(teamData);
     return result;
   } catch (error) {
     console.error("Error running AI analysis flow:", error);

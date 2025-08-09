@@ -1,24 +1,18 @@
-import {defineFlow} from 'genkit';
+'use server';
+/**
+ * @fileOverview A basketball stats analysis AI agent.
+ *
+ * - summarizeStats - A function that handles the basketball stats analysis process.
+ */
 import {z} from 'zod';
 import {ai} from '../genkit';
+import { statsSchema } from '@/types/stats';
 
-export const statsSchema = z.object({
-  name: z.string(),
-  players: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      stats: z.object({
-        points: z.number(),
-        assists: z.number(),
-        rebounds: z.number(),
-        fouls: z.number(),
-      }),
-    })
-  ),
-});
+export async function summarizeStats(stats: z.infer<typeof statsSchema>): Promise<string> {
+  return summarizeStatsFlow(stats);
+}
 
-export const summarizeStatsFlow = defineFlow(
+const summarizeStatsFlow = ai.defineFlow(
   {
     name: 'summarizeStatsFlow',
     inputSchema: statsSchema,
@@ -44,6 +38,6 @@ export const summarizeStatsFlow = defineFlow(
       },
     });
 
-    return llmResponse.text();
+    return llmResponse.text;
   }
 );
