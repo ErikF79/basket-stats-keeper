@@ -1,0 +1,65 @@
+<svg width="940" height="500" viewBox="0 0 940 500" xmlns="http://www.w3.org/2000/svg" style="background-color:#E2C4A0;">
+  <!-- Court dimensions: 94ft x 50ft. Scaled down to 940x500 pixels. -->
+  
+  <!-- Wood Floor Pattern -->
+  <defs>
+    <pattern id="wood" patternUnits="userSpaceOnUse" width="10" height="500">
+      <line x1="5" y1="0" x2="5" y2="500" stroke="#000" stroke-opacity="0.1" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="940" height="500" fill="url(#wood)" />
+  
+  <!-- Boundary Lines -->
+  <rect x="2" y="2" width="936" height="496" fill="none" stroke="#000" stroke-width="4"/>
+  
+  <!-- Center Line -->
+  <line x1="470" y1="2" x2="470" y2="498" stroke="#000" stroke-width="4"/>
+  
+  <!-- Center Circle -->
+  <circle cx="470" cy="250" r="60" fill="none" stroke="#000" stroke-width="4"/>
+  <circle cx="470" cy="250" r="20" fill="none" stroke="#000" stroke-width="4"/>
+  
+  <!-- Left Side -->
+  <!-- Free Throw Lane (The Key) -->
+  <rect x="2" y="155" width="190" height="190" fill="rgba(0,0,0,0.1)" stroke="none"/>
+  <rect x="2" y="155" width="190" height="190" fill="none" stroke="#000" stroke-width="4"/>
+  
+  <!-- Free Throw Circle -->
+  <path d="M 192,190 a 60,60 0 0,1 0,120" fill="none" stroke="#000" stroke-width="4"/>
+  <path d="M 192,190 a 60,60 0 0,0 0,120" fill="none" stroke="#000" stroke-width="4" stroke-dasharray="8,8"/>
+  
+  <!-- Three-Point Line -->
+  <line x1="2" y1="30" x2="142" y2="30" stroke="#000" stroke-width="4"/>
+  <line x1="2" y1="470" x2="142" y2="470" stroke="#000" stroke-width="4"/>
+  <path d="M 142,30 a 237.5,237.5 0 0,1 0,440" fill="none" stroke="#000" stroke-width="4"/>
+  
+  <!-- Backboard and Hoop -->
+  <line x1="40" y1="220" x2="40" y2="280" stroke="#000" stroke-width="6"/> <!-- Backboard -->
+  <circle cx="52" cy="250" r="15" fill="none" stroke="#C84128" stroke-width="4"/> <!-- Hoop -->
+
+  <!-- Restricted Area -->
+  <path d="M 52,210 a 40,40 0 0,1 0,80" fill="none" stroke="#000" stroke-width="4" />
+
+  
+  <!-- Right Side -->
+  <!-- Free Throw Lane (The Key) -->
+  <rect x="748" y="155" width="190" height="190" fill="rgba(0,0,0,0.1)" stroke="none"/>
+  <rect x="748" y="155" width="190" height="190" fill="none" stroke="#000" stroke-width="4"/>
+  
+  <!-- Free Throw Circle -->
+  <path d="M 748,190 a 60,60 0 0,0 0,120" fill="none" stroke="#000" stroke-width="4"/>
+  <path d="M 748,190 a 60,60 0 0,1 0,120" fill="none" stroke="#000" stroke-width="4" stroke-dasharray="8,8"/>
+  
+  <!-- Three-Point Line -->
+  <line x1="938" y1="30" x2="798" y2="30" stroke="#000" stroke-width="4"/>
+  <line x1="938" y1="470" x2="798" y2="470" stroke="#000" stroke-width="4"/>
+  <path d="M 798,30 a 237.5,237.5 0 0,0 0,440" fill="none" stroke="#000" stroke-width="4"/>
+  
+  <!-- Backboard and Hoop -->
+  <line x1="900" y1="220" x2="900" y2="280" stroke="#000" stroke-width="6"/>
+  <circle cx="888" cy="250" r="15" fill="none" stroke="#C84128" stroke-width="4"/>
+
+  <!-- Restricted Area -->
+  <path d="M 888,210 a 40,40 0 0,0 0,80" fill="none" stroke="#000" stroke-width="4" />
+
+</svg>
