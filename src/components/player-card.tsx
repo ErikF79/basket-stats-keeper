@@ -45,21 +45,19 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
     if (!activeStat) return;
     
     let newEvent: StatEvent;
+    const newStats = { ...player.stats };
 
     if (activeStat === 'points' && pointValue) {
       newEvent = { type: 'point', points: pointValue, x, y };
+      newStats.points += pointValue;
     } else if (activeStat !== 'points') {
       newEvent = { type: activeStat, x, y };
+      newStats[activeStat]++;
     } else {
       return;
     }
 
-    const newStats = { ...player.stats };
     newStats.events = [...newStats.events, newEvent];
-    newStats.points = newStats.events.filter(e => e.type === 'point').reduce((sum, e) => sum + (e.points || 0), 0);
-    newStats.assists = newStats.events.filter(e => e.type === 'assist').length;
-    newStats.rebounds = newStats.events.filter(e => e.type === 'rebound').length;
-    newStats.fouls = newStats.events.filter(e => e.type === 'foul').length;
     
     onUpdateStats(newStats);
     setActiveStat(null);
