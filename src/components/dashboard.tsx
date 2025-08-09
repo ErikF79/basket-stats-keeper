@@ -4,9 +4,10 @@ import type { Team, Player } from '@/types';
 import PlayerCard from '@/components/player-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Users, Download, Upload } from 'lucide-react';
+import { RefreshCw, Users, Download, Upload, BarChart2 } from 'lucide-react';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 
 interface DashboardProps {
@@ -25,6 +26,7 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleExport = () => {
     const jsonString = JSON.stringify(team, null, 2);
@@ -71,6 +73,20 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
     // Reset the input value to allow importing the same file again
     event.target.value = '';
   };
+  
+  const handleAnalyze = () => {
+    try {
+      // Save team data to localStorage to be read by the analysis page
+      localStorage.setItem('current_game_stats', JSON.stringify(team));
+      router.push('/analysis');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile salvare i dati della partita per l'analisi.",
+      });
+    }
+  };
 
 
   return (
@@ -96,6 +112,10 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
           <Button onClick={handleImportClick} variant="outline">
             <Upload className="mr-2 h-4 w-4" />
             Importa
+          </Button>
+          <Button onClick={handleAnalyze} variant="default">
+            <BarChart2 className="mr-2 h-4 w-4" />
+            Analizza Statistiche
           </Button>
           <input 
             type="file" 
