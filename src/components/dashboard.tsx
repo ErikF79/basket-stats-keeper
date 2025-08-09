@@ -4,20 +4,74 @@ import type { Team, Player } from '@/types';
 import PlayerCard from '@/components/player-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Users } from 'lucide-react';
+import { RefreshCw, Users, Download, Upload } from 'lucide-react';
+import { useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface DashboardProps {
   team: Team;
   onUpdateStats: (playerId: string, newStats: Player['stats']) => void;
   onResetApp: () => void;
   onResetStats: () => void;
+  onImportTeam: (team: Team) => void;
 }
 
-export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStats }: DashboardProps) {
+export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStats, onImportTeam }: DashboardProps) {
   const totalPoints = team.players.reduce((sum, player) => sum + player.stats.points, 0);
   const totalAssists = team.players.reduce((sum, player) => sum + player.stats.assists, 0);
   const totalRebounds = team.players.reduce((sum, player) => sum + player.stats.rebounds, 0);
   const totalFouls = team.players.reduce((sum, player) => sum + player.stats.fouls, 0);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleExport = () => {
+    const jsonString = JSON.stringify(team, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${team.name.toLowerCase().replace(/\s/g, '_')}_stats.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+     toast({
+        title: "Esportazione completata",
+        description: "Le statistiche sono state salvate in un file JSON.",
+      })
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text === 'string') {
+          const importedTeam = JSON.parse(text);
+          onImportTeam(importedTeam);
+        }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Errore di importazione",
+          description: "Impossibile analizzare il file JSON. Assicurati che sia formattato correttamente.",
+        });
+      }
+    };
+    reader.readAsText(file);
+    // Reset the input value to allow importing the same file again
+    event.target.value = '';
+  };
+
 
   return (
     <div className="space-y-8">
@@ -26,7 +80,7 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
           <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">{team.name}</h1>
           <p className="mt-2 text-lg text-muted-foreground">Statistiche di Gioco in Tempo Reale</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
            <Button onClick={onResetStats} variant="outline">
             <RefreshCw className="mr-2 h-4 w-4" />
             Nuova Partita
@@ -35,6 +89,21 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
             <Users className="mr-2 h-4 w-4" />
             Cambia Squadra
           </Button>
+           <Button onClick={handleExport} variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Esporta
+          </Button>
+          <Button onClick={handleImportClick} variant="outline">
+            <Upload className="mr-2 h-4 w-4" />
+            Importa
+          </Button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange}
+            className="hidden"
+            accept=".json"
+          />
         </div>
       </header>
 

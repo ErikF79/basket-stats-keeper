@@ -5,9 +5,11 @@ import TeamSetup from '@/components/team-setup';
 import Dashboard from '@/components/dashboard';
 import type { Team, Player } from '@/types';
 import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const [team, setTeam] = useState<Team | null>(null);
+  const { toast } = useToast();
 
   const handleTeamSetup = (teamName: string, playerNames: string[]) => {
     const players: Player[] = playerNames.map((name, index) => ({
@@ -37,6 +39,23 @@ export default function Home() {
         stats: { points: 0, assists: 0, rebounds: 0, fouls: 0, events: [] },
     }));
     setTeam({ ...team, players: resetPlayers });
+  };
+
+  const handleImportTeam = (importedTeam: Team) => {
+    // Basic validation
+    if (importedTeam && importedTeam.name && Array.isArray(importedTeam.players)) {
+      setTeam(importedTeam);
+      toast({
+        title: "Importazione Riuscita",
+        description: `I dati della squadra "${importedTeam.name}" sono stati caricati.`,
+      });
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Importazione Fallita",
+        description: "Il file JSON non è valido o è corrotto.",
+      });
+    }
   }
 
   return (
@@ -51,6 +70,7 @@ export default function Home() {
               onUpdateStats={handleUpdatePlayerStats} 
               onResetApp={handleReset} 
               onResetStats={handleResetStats}
+              onImportTeam={handleImportTeam}
             />
           )}
         </div>
