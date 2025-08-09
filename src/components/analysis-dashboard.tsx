@@ -12,7 +12,7 @@ interface AnalysisDashboardProps {
   team: Team;
 }
 
-const getFilteredEvents = (players: Player[], filter: 'all' | 'point' | 'assist' | 'rebound' | 'foul'): StatEvent[] => {
+const getFilteredEvents = (players: Player[], filter: 'all' | 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot'): StatEvent[] => {
   let allEvents = players.flatMap(p => p.stats.events);
   if (filter !== 'all') {
     allEvents = allEvents.filter(event => event.type === filter);
@@ -64,6 +64,7 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
                         <TableHead className="text-center">Assist</TableHead>
                         <TableHead className="text-center">Rimbalzi</TableHead>
                         <TableHead className="text-center">Falli</TableHead>
+                        <TableHead className="text-center">Tiri Sbagliati</TableHead>
                     </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -74,6 +75,7 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
                         <TableCell className="text-center">{player.stats.assists}</TableCell>
                         <TableCell className="text-center">{player.stats.rebounds}</TableCell>
                         <TableCell className="text-center">{player.stats.fouls}</TableCell>
+                        <TableCell className="text-center">{player.stats.missed_shots || 0}</TableCell>
                         </TableRow>
                     ))}
                     </TableBody>
@@ -83,12 +85,13 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
         </TabsContent>
         <TabsContent value="heatmap">
             <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                     <TabsTrigger value="all">Tutti</TabsTrigger>
                     <TabsTrigger value="point">Punti</TabsTrigger>
                     <TabsTrigger value="assist">Assist</TabsTrigger>
                     <TabsTrigger value="rebound">Rimbalzi</TabsTrigger>
                     <TabsTrigger value="foul">Falli</TabsTrigger>
+                    <TabsTrigger value="missed_shot">Tiri Sbagliati</TabsTrigger>
                 </TabsList>
                 <TabsContent value="all">
                     <Heatmap events={getFilteredEvents(team.players, 'all')} title="Mappa di tutti gli eventi" />
@@ -104,6 +107,9 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
                 </TabsContent>
                  <TabsContent value="foul">
                     <Heatmap events={getFilteredEvents(team.players, 'foul')} title="Mappa dei Falli" />
+                </TabsContent>
+                 <TabsContent value="missed_shot">
+                    <Heatmap events={getFilteredEvents(team.players, 'missed_shot')} title="Mappa dei Tiri Sbagliati" />
                 </TabsContent>
             </Tabs>
         </TabsContent>

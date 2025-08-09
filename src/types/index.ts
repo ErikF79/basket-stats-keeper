@@ -1,5 +1,5 @@
 export interface StatEvent {
-  type: 'point' | 'assist' | 'rebound' | 'foul';
+  type: 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot';
   points?: 1 | 2 | 3;
   x: number;
   y: number;
@@ -10,6 +10,7 @@ export interface PlayerStats {
   assists: number;
   rebounds: number;
   fouls: number;
+  missed_shots: number;
   events: StatEvent[];
 }
 

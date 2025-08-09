@@ -58,8 +58,24 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
       try {
         const text = e.target?.result;
         if (typeof text === 'string') {
-          const importedTeam = JSON.parse(text);
-          onImportTeam(importedTeam);
+          const importedData = JSON.parse(text);
+          // Add missed_shots to older JSON files if it doesn't exist
+          const sanitizedTeam = {
+            ...importedData,
+            players: importedData.players.map((p: Player) => ({
+              ...p,
+              stats: {
+                points: 0,
+                assists: 0,
+                rebounds: 0,
+                fouls: 0,
+                missed_shots: 0,
+                events: [],
+                ...p.stats
+              }
+            }))
+          };
+          onImportTeam(sanitizedTeam);
         }
       } catch (error) {
         toast({

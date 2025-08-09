@@ -11,69 +11,54 @@ interface PlayerCardProps {
   onUpdateStats: (newStats: Player['stats']) => void;
 }
 
-const StatRow = ({ label, value, onIncrement, onDecrement }: { label: string; value: number; onIncrement: () => void; onDecrement: () => void; }) => (
-  <div className="flex items-center justify-between">
-    <p className="font-medium">{label}</p>
-    <div className="flex items-center gap-2">
-      <Button variant="outline" size="icon" className="h-7 w-7" onClick={onDecrement} disabled={value === 0}>
-        <Minus className="h-4 w-4" />
-      </Button>
-      <span className="w-8 text-center font-mono text-lg">{value}</span>
-      <Button variant="outline" size="icon" className="h-7 w-7" onClick={onIncrement}>
-        <Plus className="h-4 w-4" />
-      </Button>
-    </div>
-  </div>
-);
-
-
 export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
-  const [activeStat, setActiveStat] = useState<'points' | 'assists' | 'rebounds' | 'fouls' | null>(null);
-  const [pointValue, setPointValue] = useState<1 | 2 | 3 | null>(null);
+  const [activeAction, setActiveAction] = useState<{ type: 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot', value?: 1 | 2 | 3 } | null>(null);
 
-  const handleStatSelection = (stat: 'assists' | 'rebounds' | 'fouls') => {
-    setActiveStat(stat);
-    setPointValue(null);
-  }
-
-  const handlePointSelection = (value: 1 | 2 | 3) => {
-    setActiveStat('points');
-    setPointValue(value);
-  }
+  const handleActionSelection = (type: 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot', value?: 1 | 2 | 3) => {
+    setActiveAction({ type, value });
+  };
 
   const handleCourtClick = (x: number, y: number) => {
-    if (!activeStat) return;
+    if (!activeAction) return;
     
-    let newEvent: StatEvent;
     const newStats = { ...player.stats };
+    let newEvent: StatEvent;
 
-    if (activeStat === 'points' && pointValue) {
-      newEvent = { type: 'point', points: pointValue, x, y };
-      newStats.points += pointValue;
-    } else if (activeStat !== 'points') {
-      newEvent = { type: activeStat, x, y };
-      newStats[activeStat]++;
-    } else {
-      return;
+    switch (activeAction.type) {
+      case 'point':
+        if (activeAction.value) {
+          newEvent = { type: 'point', points: activeAction.value, x, y };
+          newStats.points += activeAction.value;
+          newStats.events.push(newEvent);
+        }
+        break;
+      case 'missed_shot':
+        if (activeAction.value) {
+            newEvent = { type: 'missed_shot', points: activeAction.value, x, y };
+            newStats.missed_shots++;
+            newStats.events.push(newEvent);
+        }
+        break;
+      case 'assist':
+      case 'rebound':
+      case 'foul':
+        newEvent = { type: activeAction.type, x, y };
+        newStats[activeAction.type]++;
+        newStats.events.push(newEvent);
+        break;
     }
-
-    newStats.events = [...newStats.events, newEvent];
     
     onUpdateStats(newStats);
-    setActiveStat(null);
-    setPointValue(null);
+    setActiveAction(null);
   };
   
-  const handleUndo = (stat: keyof Omit<Player['stats'], 'points' | 'events'>) => {
+  const handleUndo = (stat: keyof Omit<Player['stats'], 'events' | 'points'>) => {
     const newStats = { ...player.stats };
     const lastEventIndex = newStats.events.findLastIndex(e => e.type === stat);
     
     if(lastEventIndex > -1) {
       newStats.events.splice(lastEventIndex, 1);
       newStats[stat] = newStats.events.filter(e => e.type === stat).length;
-      if (stat === 'point') {
-        newStats.points = newStats.events.filter(e => e.type === 'point').reduce((sum, e) => sum + (e.points || 0), 0);
-      }
       onUpdateStats(newStats);
     }
   };
@@ -95,16 +80,24 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
         <CardTitle>{player.name}</CardTitle>
         <div className="flex justify-between items-baseline">
             <CardDescription>Punti: <span className="text-2xl font-bold text-primary">{player.stats.points}</span></CardDescription>
-            <Button variant="outline" size="sm" onClick={handleUndoPoints} disabled={!player.stats.events.some(e => e.type === 'point')}>Annulla</Button>
+            <Button variant="outline" size="sm" onClick={handleUndoPoints} disabled={!player.stats.events.some(e => e.type === 'point')}>Annulla Punto</Button>
         </div>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         <div>
           <p className="mb-2 font-medium">Segna Punti</p>
           <div className="grid grid-cols-3 gap-2">
-            <Button variant={activeStat === 'points' && pointValue === 1 ? "default" : "secondary"} onClick={() => handlePointSelection(1)}>+1 PT</Button>
-            <Button variant={activeStat === 'points' && pointValue === 2 ? "default" : "secondary"} onClick={() => handlePointSelection(2)}>+2 PTS</Button>
-            <Button variant={activeStat === 'points' && pointValue === 3 ? "default" : "secondary"} onClick={() => handlePointSelection(3)}>+3 PTS</Button>
+            <Button variant={activeAction?.type === 'point' && activeAction?.value === 1 ? "default" : "secondary"} onClick={() => handleActionSelection('point', 1)}>+1 PT</Button>
+            <Button variant={activeAction?.type === 'point' && activeAction?.value === 2 ? "default" : "secondary"} onClick={() => handleActionSelection('point', 2)}>+2 PTS</Button>
+            <Button variant={activeAction?.type === 'point' && activeAction?.value === 3 ? "default" : "secondary"} onClick={() => handleActionSelection('point', 3)}>+3 PTS</Button>
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 font-medium text-destructive">Tiri Sbagliati</p>
+          <div className="grid grid-cols-3 gap-2">
+            <Button variant={activeAction?.type === 'missed_shot' && activeAction?.value === 1 ? "destructive" : "secondary"} onClick={() => handleActionSelection('missed_shot', 1)}>1 PT</Button>
+            <Button variant={activeAction?.type === 'missed_shot' && activeAction?.value === 2 ? "destructive" : "secondary"} onClick={() => handleActionSelection('missed_shot', 2)}>2 PTS</Button>
+            <Button variant={activeAction?.type === 'missed_shot' && activeAction?.value === 3 ? "destructive" : "secondary"} onClick={() => handleActionSelection('missed_shot', 3)}>3 PTS</Button>
           </div>
         </div>
 
@@ -116,7 +109,7 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
                         <Minus className="h-4 w-4" />
                     </Button>
                     <span className="w-8 text-center font-mono text-lg">{player.stats.assists}</span>
-                    <Button variant={activeStat === 'assists' ? 'default' : 'outline'} size="icon" className="h-7 w-7" onClick={() => handleStatSelection('assists')}>
+                    <Button variant={activeAction?.type === 'assist' ? 'default' : 'outline'} size="icon" className="h-7 w-7" onClick={() => handleActionSelection('assist')}>
                         <Plus className="h-4 w-4" />
                     </Button>
                 </div>
@@ -128,7 +121,7 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
                         <Minus className="h-4 w-4" />
                     </Button>
                     <span className="w-8 text-center font-mono text-lg">{player.stats.rebounds}</span>
-                    <Button variant={activeStat === 'rebounds' ? 'default' : 'outline'} size="icon" className="h-7 w-7" onClick={() => handleStatSelection('rebounds')}>
+                    <Button variant={activeAction?.type === 'rebound' ? 'default' : 'outline'} size="icon" className="h-7 w-7" onClick={() => handleActionSelection('rebound')}>
                         <Plus className="h-4 w-4" />
                     </Button>
                 </div>
@@ -140,26 +133,27 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
                         <Minus className="h-4 w-4" />
                     </Button>
                     <span className="w-8 text-center font-mono text-lg">{player.stats.fouls}</span>
-                    <Button variant={activeStat === 'fouls' ? 'default' : 'outline'} size="icon" className="h-7 w-7" onClick={() => handleStatSelection('fouls')}>
+                    <Button variant={activeAction?.type === 'foul' ? 'default' : 'outline'} size="icon" className="h-7 w-7" onClick={() => handleActionSelection('foul')}>
                         <Plus className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
         </div>
 
-        {activeStat && (
+        {activeAction && (
           <div className="pt-4">
              <p className="text-sm font-medium text-center mb-2">
                 Seleziona la posizione sul campo per
                 <span className="font-bold text-primary">
-                    {activeStat === 'points' && ` un tiro da ${pointValue} punt${pointValue === 1 ? 'o' : 'i'}`}
-                    {activeStat === 'assists' && ' un assist'}
-                    {activeStat === 'rebounds' && ' un rimbalzo'}
-                    {activeStat === 'fouls' && ' un fallo'}
+                    {activeAction.type === 'point' && ` un tiro da ${activeAction.value} punt${activeAction.value === 1 ? 'o' : 'i'}`}
+                    {activeAction.type === 'missed_shot' && ` un tiro sbagliato da ${activeAction.value} punt${activeAction.value === 1 ? 'o' : 'i'}`}
+                    {activeAction.type === 'assist' && ' un assist'}
+                    {activeAction.type === 'rebound' && ' un rimbalzo'}
+                    {activeAction.type === 'foul' && ' un fallo'}
                 </span>
              </p>
             <Court onCourtClick={handleCourtClick} />
-            <Button variant="link" className="w-full mt-2" onClick={() => setActiveStat(null)}>Annulla selezione</Button>
+            <Button variant="link" className="w-full mt-2" onClick={() => setActiveAction(null)}>Annulla selezione</Button>
           </div>
         )}
       </CardContent>

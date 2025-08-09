@@ -15,7 +15,7 @@ export default function Home() {
     const players: Player[] = playerNames.map((name, index) => ({
       id: `${Date.now()}-${index}`,
       name,
-      stats: { points: 0, assists: 0, rebounds: 0, fouls: 0, events: [] },
+      stats: { points: 0, assists: 0, rebounds: 0, fouls: 0, missed_shots: 0, events: [] },
     }));
     setTeam({ name: teamName, players });
   };
@@ -36,7 +36,7 @@ export default function Home() {
     if (!team) return;
     const resetPlayers = team.players.map(player => ({
         ...player,
-        stats: { points: 0, assists: 0, rebounds: 0, fouls: 0, events: [] },
+        stats: { points: 0, assists: 0, rebounds: 0, fouls: 0, missed_shots: 0, events: [] },
     }));
     setTeam({ ...team, players: resetPlayers });
   };

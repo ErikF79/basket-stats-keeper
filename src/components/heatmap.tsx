@@ -13,6 +13,7 @@ const eventColorMap = {
   assist: 'bg-blue-500',    // Blu per gli assist
   rebound: 'bg-yellow-500', // Giallo per i rimbalzi
   foul: 'bg-red-500',       // Rosso per i falli
+  missed_shot: 'bg-orange-500', // Arancione per tiri sbagliati
 };
 
 
@@ -43,11 +44,12 @@ export default function Heatmap({ events, title }: HeatmapProps) {
             );
           })}
         </div>
-        <div className="flex justify-center gap-4 mt-4 text-xs">
+        <div className="flex justify-center flex-wrap gap-4 mt-4 text-xs">
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-green-500"></div>Punti</div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-blue-500"></div>Assist</div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-yellow-500"></div>Rimbalzi</div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-red-500"></div>Falli</div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-orange-500"></div>Tiri Sbagliati</div>
         </div>
       </CardContent>
     </Card>
