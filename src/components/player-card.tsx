@@ -108,7 +108,7 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
           </div>
         </div>
         <div>
-          <p className="mb-2 font-medium text-destructive">Tiri Sbagliati</p>
+          <p className="mb-2 font-medium">Tiri Sbagliati</p>
           <div className="grid grid-cols-3 gap-2">
             <Button variant={activeAction?.type === 'missed_shot' && activeAction?.value === 1 ? "destructive" : "secondary"} onClick={() => handleActionSelection('missed_shot', 1)}>1 PT</Button>
             <Button variant={activeAction?.type === 'missed_shot' && activeAction?.value === 2 ? "destructive" : "secondary"} onClick={() => handleActionSelection('missed_shot', 2)}>2 PTS</Button>
