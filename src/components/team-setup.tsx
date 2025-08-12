@@ -90,7 +90,7 @@ export default function TeamSetup({ onSetupComplete }: TeamSetupProps) {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
       <div className="text-center mb-8">
         <BasketballIcon className="mx-auto h-16 w-16 text-primary" />
-        <h1 className="text-4xl font-bold mt-4">Segnapunti Basket</h1>
+        <h1 className="text-4xl font-bold mt-4">Basket Stats Keeper</h1>
         <p className="text-muted-foreground mt-2">Configura la tua squadra per iniziare a tracciare le statistiche di gioco in tempo reale.</p>
       </div>
       <Card className="w-full max-w-lg">
