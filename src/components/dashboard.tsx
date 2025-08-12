@@ -129,7 +129,7 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
             <Upload className="mr-2 h-4 w-4" />
             Importa
           </Button>
-          <Button onClick={handleAnalyze} variant="default">
+          <Button onClick={handleAnalyze} variant="default" className="text-primary-foreground">
             <BarChart2 className="mr-2 h-4 w-4" />
             Analizza Statistiche
           </Button>
