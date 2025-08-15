@@ -5,9 +5,21 @@ import PlayerCard from '@/components/player-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, Users, Download, Upload, BarChart2 } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 
 interface DashboardProps {
@@ -25,16 +37,26 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
   const totalFouls = team.players.reduce((sum, player) => sum + player.stats.fouls, 0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [exportFileName, setExportFileName] = useState(`${team.name.toLowerCase().replace(/\s/g, '_')}_stats`);
   const { toast } = useToast();
   const router = useRouter();
 
   const handleExport = () => {
+    if (!exportFileName.trim()) {
+        toast({
+            variant: "destructive",
+            title: "Nome file non valido",
+            description: "Per favore, inserisci un nome per il file.",
+        });
+        return;
+    }
+    
     const jsonString = JSON.stringify(team, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${team.name.toLowerCase().replace(/\s/g, '_')}_stats.json`;
+    a.download = `${exportFileName.trim()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -42,7 +64,7 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
      toast({
         title: "Esportazione completata",
         description: "Le statistiche sono state salvate in un file JSON.",
-      })
+      });
   };
 
   const handleImportClick = () => {
@@ -121,10 +143,43 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
             <Users className="mr-2 h-4 w-4" />
             Cambia Squadra
           </Button>
-           <Button onClick={handleExport} variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Esporta
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+               <Button variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Esporta
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Esporta Statistiche</DialogTitle>
+                <DialogDescription>
+                  Inserisci un nome per il file di esportazione. Verrà aggiunta l'estensione .json automaticamente.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="filename" className="text-right">
+                    Nome File
+                  </Label>
+                  <Input
+                    id="filename"
+                    value={exportFileName}
+                    onChange={(e) => setExportFileName(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="secondary">Annulla</Button>
+                </DialogClose>
+                <DialogClose asChild>
+                  <Button type="submit" onClick={handleExport}>Salva Esportazione</Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Button onClick={handleImportClick} variant="outline">
             <Upload className="mr-2 h-4 w-4" />
             Importa
