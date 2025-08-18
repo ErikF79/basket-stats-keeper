@@ -1,3 +1,4 @@
+
 'use client';
 import type { Team, Player, StatEvent } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,12 +9,14 @@ import { Home, Upload, X } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Checkbox } from "@/components/ui/checkbox"
+import { useToast } from '@/hooks/use-toast';
+
 
 interface AnalysisDashboardProps {
   games: Team[];
-  onImportGame: () => void;
+  onFileImported: (team: Team) => void;
 }
 
 const getFilteredEvents = (players: Player[], filter: 'all' | 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot'): StatEvent[] => {
@@ -87,8 +90,45 @@ const aggregatePlayerData = (games: Team[]) => {
     }));
 };
 
-export default function AnalysisDashboard({ games, onImportGame }: AnalysisDashboardProps) {
+export default function AnalysisDashboard({ games, onFileImported }: AnalysisDashboardProps) {
   const [selectedGames, setSelectedGames] = useState<string[]>(games.map(g => g.name));
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Quando la lista di partite cambia (un nuovo file viene importato),
+    // aggiorna la selezione per includere la nuova partita.
+    setSelectedGames(games.map(g => g.name));
+  }, [games]);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text === 'string') {
+          const importedData = JSON.parse(text);
+          onFileImported(importedData);
+        }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Errore di importazione",
+          description: "Impossibile analizzare il file JSON. Assicurati che sia formattato correttamente.",
+        });
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
 
   const handleGameSelection = (gameName: string) => {
     setSelectedGames(prev =>
@@ -112,6 +152,24 @@ export default function AnalysisDashboard({ games, onImportGame }: AnalysisDashb
     return `${((made / attempted) * 100).toFixed(1)}%`;
   };
 
+  if (games.length === 0) {
+     return (
+        <>
+            <Button onClick={handleImportClick} variant="secondary" className="text-secondary-foreground">
+                <Upload className="mr-2 h-4 w-4" />
+                Importa Partita
+            </Button>
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".json"
+            />
+        </>
+     )
+  }
+
   return (
     <div className="container mx-auto p-4 py-8 md:p-8 space-y-8">
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -124,9 +182,9 @@ export default function AnalysisDashboard({ games, onImportGame }: AnalysisDashb
           </p>
         </div>
         <div className="flex items-center gap-2">
-            <Button onClick={onImportGame} variant="outline">
+            <Button onClick={handleImportClick} variant="outline">
                 <Upload className="mr-2 h-4 w-4" />
-                Importa Partita
+                Importa Altra Partita
             </Button>
             <Button asChild variant="outline">
               <Link href="/">
@@ -134,6 +192,13 @@ export default function AnalysisDashboard({ games, onImportGame }: AnalysisDashb
                 Torna alla Home
               </Link>
             </Button>
+             <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".json"
+              />
         </div>
       </header>
 

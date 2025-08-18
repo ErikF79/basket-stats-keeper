@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import type { Team } from '@/types';
 import AnalysisDashboard from '@/components/analysis-dashboard';
 import { Button } from '@/components/ui/button';
@@ -12,49 +12,25 @@ import { useToast } from '@/hooks/use-toast';
 export default function AnalysisPage() {
   const [games, setGames] = useState<Team[]>([]);
   const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
+  const handleFileImported = (importedData: Team) => {
+    // Basic validation
+    if (importedData && importedData.name && Array.isArray(importedData.players)) {
+      setGames(prevGames => [...prevGames, importedData]);
+      toast({
+        title: "Importazione Riuscita",
+        description: `I dati della partita "${importedData.name}" sono stati caricati.`,
+      });
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Importazione Fallita",
+        description: "Il file JSON non è valido o è corrotto.",
+      });
+    }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result;
-        if (typeof text === 'string') {
-          const importedData = JSON.parse(text);
-          // Basic validation
-          if (importedData && importedData.name && Array.isArray(importedData.players)) {
-            setGames(prevGames => [...prevGames, importedData]);
-            toast({
-              title: "Importazione Riuscita",
-              description: `I dati della partita "${importedData.name}" sono stati caricati.`,
-            });
-          } else {
-             toast({
-              variant: "destructive",
-              title: "Importazione Fallita",
-              description: "Il file JSON non è valido o è corrotto.",
-            });
-          }
-        }
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Errore di importazione",
-          description: "Impossibile analizzare il file JSON. Assicurati che sia formattato correttamente.",
-        });
-      }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-  };
 
   if (loading) {
     return (
@@ -72,24 +48,14 @@ export default function AnalysisPage() {
           Carica una partita salvata per iniziare l'analisi.
         </p>
         <div className="flex gap-4">
-          <Button onClick={handleImportClick} variant="secondary" className="text-secondary-foreground">
-            <Upload className="mr-2 h-4 w-4" />
-            Importa Partita
-          </Button>
+          <AnalysisDashboard games={games} onFileImported={handleFileImported} />
           <Button asChild variant="outline">
             <Link href="/">Torna alla Home</Link>
           </Button>
         </div>
-         <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange}
-            className="hidden"
-            accept=".json"
-          />
       </div>
     );
   }
 
-  return <AnalysisDashboard games={games} onImportGame={handleImportClick} />;
+  return <AnalysisDashboard games={games} onFileImported={handleFileImported} />;
 }
