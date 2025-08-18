@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import type { Team } from '@/types';
 import AnalysisDashboard from '@/components/analysis-dashboard';
 import { Button } from '@/components/ui/button';
@@ -71,7 +72,7 @@ export default function AnalysisPage() {
           Carica una partita salvata per iniziare l'analisi.
         </p>
         <div className="flex gap-4">
-          <Button onClick={handleImportClick} variant="secondary">
+          <Button onClick={handleImportClick} variant="secondary" className="text-secondary-foreground">
             <Upload className="mr-2 h-4 w-4" />
             Importa Partita
           </Button>
