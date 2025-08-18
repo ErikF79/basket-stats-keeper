@@ -97,7 +97,7 @@ export default function TeamSetup({ onSetupComplete }: TeamSetupProps) {
       <Card className="w-full max-w-lg">
         <form onSubmit={handleSubmit}>
           <CardHeader>
-            <CardTitle>Configurazione Squadra</CardTitle>
+            <CardTitle>Registra Dati Gara</CardTitle>
             <CardDescription>Inserisci il nome della tua squadra e aggiungi i tuoi giocatori.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
