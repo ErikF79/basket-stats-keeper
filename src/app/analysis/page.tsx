@@ -71,7 +71,7 @@ export default function AnalysisPage() {
           Carica una partita salvata per iniziare l'analisi.
         </p>
         <div className="flex gap-4">
-          <Button onClick={handleImportClick}>
+          <Button onClick={handleImportClick} variant="secondary">
             <Upload className="mr-2 h-4 w-4" />
             Importa Partita
           </Button>
