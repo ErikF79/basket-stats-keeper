@@ -99,10 +99,11 @@ export default function AnalysisDashboard({ games, onFileImported }: AnalysisDas
     // Aggiunge le nuove partite alla selezione senza resettare le scelte esistenti.
     const newGameNames = games.map(g => g.name);
     setSelectedGames(prevSelected => {
-      const updatedSelection = new Set([...prevSelected, ...newGameNames]);
-      return Array.from(updatedSelection);
+      const newGamesToAdd = newGameNames.filter(name => !prevSelected.includes(name));
+      return [...prevSelected, ...newGamesToAdd];
     });
   }, [games]);
+
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
