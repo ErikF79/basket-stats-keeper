@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, Plus, Users } from 'lucide-react';
+import { X, Plus, Users, BarChart2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast"
+import Link from 'next/link';
 
 interface TeamSetupProps {
   onSetupComplete: (teamName: string, playerNames: string[]) => void;
@@ -130,10 +131,16 @@ export default function TeamSetup({ onSetupComplete }: TeamSetupProps) {
               </Button>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex-col gap-2">
             <Button type="submit" className="w-full bg-secondary hover:bg-secondary/80 text-[#6D001A] font-bold">
               <Users className="mr-2 h-4 w-4" />
               Inizia a Tracciare le Statistiche
+            </Button>
+             <Button asChild variant="outline" className="w-full">
+                <Link href="/analysis">
+                    <BarChart2 className="mr-2 h-4 w-4" />
+                    Analizza Partite Esistenti
+                </Link>
             </Button>
           </CardFooter>
         </form>

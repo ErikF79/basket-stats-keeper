@@ -10,26 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function AnalysisPage() {
   const [games, setGames] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    try {
-      const savedData = localStorage.getItem('current_game_stats');
-      if (savedData) {
-        const currentTeam = JSON.parse(savedData);
-        if (!currentTeam.name.includes('(Partita Corrente)')) {
-          currentTeam.name = `${currentTeam.name} (Partita Corrente)`;
-        }
-        setGames([currentTeam]);
-      }
-    } catch (error) {
-      console.error("Failed to parse team data from localStorage", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
