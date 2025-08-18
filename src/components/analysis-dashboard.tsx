@@ -4,13 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Heatmap from '@/components/heatmap';
 import { Button } from '@/components/ui/button';
-import { Home } from 'lucide-react';
+import { Home, Upload, X } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useState, useMemo } from 'react';
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface AnalysisDashboardProps {
-  team: Team;
+  games: Team[];
+  onImportGame: () => void;
 }
 
 const getFilteredEvents = (players: Player[], filter: 'all' | 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot'): StatEvent[] => {
@@ -52,8 +55,51 @@ const calculateShootingStats = (players: Player[]) => {
   return stats;
 };
 
-export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
-  const shootingStats = calculateShootingStats(team.players);
+const aggregatePlayerData = (games: Team[]) => {
+    const playerMap = new Map<string, Player['stats']>();
+
+    games.forEach(game => {
+        game.players.forEach(player => {
+            if (!playerMap.has(player.name)) {
+                playerMap.set(player.name, {
+                    points: 0,
+                    assists: 0,
+                    rebounds: 0,
+                    fouls: 0,
+                    missed_shots: 0,
+                    events: []
+                });
+            }
+            const aggregatedStats = playerMap.get(player.name)!;
+            aggregatedStats.points += player.stats.points;
+            aggregatedStats.assists += player.stats.assists;
+            aggregatedStats.rebounds += player.stats.rebounds;
+            aggregatedStats.fouls += player.stats.fouls;
+            aggregatedStats.missed_shots += player.stats.missed_shots;
+            aggregatedStats.events.push(...player.stats.events);
+        });
+    });
+    
+    return Array.from(playerMap.entries()).map(([name, stats], index) => ({
+        id: `agg-${index}`,
+        name,
+        stats
+    }));
+};
+
+export default function AnalysisDashboard({ games, onImportGame }: AnalysisDashboardProps) {
+  const [selectedGames, setSelectedGames] = useState<string[]>(games.map(g => g.name));
+
+  const handleGameSelection = (gameName: string) => {
+    setSelectedGames(prev =>
+      prev.includes(gameName) ? prev.filter(g => g !== gameName) : [...prev, gameName]
+    );
+  };
+  
+  const filteredGames = useMemo(() => games.filter(g => selectedGames.includes(g.name)), [games, selectedGames]);
+  const aggregatedPlayers = useMemo(() => aggregatePlayerData(filteredGames), [filteredGames]);
+  
+  const shootingStats = calculateShootingStats(aggregatedPlayers);
   const totalShots = shootingStats.totalMade + shootingStats.totalMissed;
   
   const shootingPercentageData = [
@@ -71,19 +117,52 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
-            Analisi Statistiche: {team.name}
+            Analisi Statistiche
           </h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            Riepilogo dettagliato della performance di squadra e dei giocatori.
+            Riepilogo dettagliato e confronto delle performance.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/">
-            <Home className="mr-2 h-4 w-4" />
-            Torna alla Home
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button onClick={onImportGame} variant="outline">
+                <Upload className="mr-2 h-4 w-4" />
+                Importa Partita
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/">
+                <Home className="mr-2 h-4 w-4" />
+                Torna alla Home
+              </Link>
+            </Button>
+        </div>
       </header>
+
+       <Card>
+        <CardHeader>
+          <CardTitle>Selezione Partite</CardTitle>
+          <CardDescription>
+            Scegli le partite da includere nel confronto.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4">
+          {games.map((game, index) => (
+            <div key={`${game.name}-${index}`} className="flex items-center space-x-2">
+              <Checkbox
+                id={`game-${index}`}
+                checked={selectedGames.includes(game.name)}
+                onCheckedChange={() => handleGameSelection(game.name)}
+              />
+              <label
+                htmlFor={`game-${index}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                {game.name}
+              </label>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
 
       <Tabs defaultValue="overview">
         <TabsList className="grid w-full grid-cols-3">
@@ -94,9 +173,9 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
         <TabsContent value="overview">
             <Card>
                 <CardHeader>
-                <CardTitle>Statistiche per Giocatore</CardTitle>
+                <CardTitle>Statistiche Aggregate per Giocatore</CardTitle>
                 <CardDescription>
-                    Riepilogo completo delle prestazioni individuali.
+                    Riepilogo completo delle prestazioni individuali sulle partite selezionate.
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -112,7 +191,7 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {team.players.map(player => (
+                    {aggregatedPlayers.map(player => (
                         <TableRow key={player.id}>
                         <TableCell className="font-medium">{player.name}</TableCell>
                         <TableCell className="text-center font-bold text-primary">{player.stats.points}</TableCell>
@@ -135,7 +214,7 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
               </CardHeader>
               <CardContent>
                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={team.players.map(p => ({ name: p.name, ...p.stats }))}>
+                    <BarChart data={aggregatedPlayers.map(p => ({ name: p.name, ...p.stats }))}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
@@ -204,22 +283,22 @@ export default function AnalysisDashboard({ team }: AnalysisDashboardProps) {
                     <TabsTrigger value="missed_shot">Tiri Sbagliati</TabsTrigger>
                 </TabsList>
                 <TabsContent value="all">
-                    <Heatmap events={getFilteredEvents(team.players, 'all')} title="Mappa di tutti gli eventi" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'all')} title="Mappa di tutti gli eventi" />
                 </TabsContent>
                  <TabsContent value="point">
-                    <Heatmap events={getFilteredEvents(team.players, 'point')} title="Mappa dei Punti" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'point')} title="Mappa dei Punti" />
                 </TabsContent>
                  <TabsContent value="assist">
-                    <Heatmap events={getFilteredEvents(team.players, 'assist')} title="Mappa degli Assist" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'assist')} title="Mappa degli Assist" />
                 </TabsContent>
                  <TabsContent value="rebound">
-                    <Heatmap events={getFilteredEvents(team.players, 'rebound')} title="Mappa dei Rimbalzi" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'rebound')} title="Mappa dei Rimbalzi" />
                 </TabsContent>
                  <TabsContent value="foul">
-                    <Heatmap events={getFilteredEvents(team.players, 'foul')} title="Mappa dei Falli" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'foul')} title="Mappa dei Falli" />
                 </TabsContent>
                  <TabsContent value="missed_shot">
-                    <Heatmap events={getFilteredEvents(team.players, 'missed_shot')} title="Mappa dei Tiri Sbagliati" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'missed_shot')} title="Mappa dei Tiri Sbagliati" />
                 </TabsContent>
             </Tabs>
         </TabsContent>
