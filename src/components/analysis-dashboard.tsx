@@ -96,9 +96,12 @@ export default function AnalysisDashboard({ games, onFileImported }: AnalysisDas
   const { toast } = useToast();
 
   useEffect(() => {
-    // Quando la lista di partite cambia (un nuovo file viene importato),
-    // aggiorna la selezione per includere la nuova partita.
-    setSelectedGames(games.map(g => g.name));
+    // Aggiunge le nuove partite alla selezione senza resettare le scelte esistenti.
+    const newGameNames = games.map(g => g.name);
+    setSelectedGames(prevSelected => {
+      const updatedSelection = new Set([...prevSelected, ...newGameNames]);
+      return Array.from(updatedSelection);
+    });
   }, [games]);
 
   const handleImportClick = () => {
