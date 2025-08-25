@@ -114,6 +114,16 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
   };
   
   const handleAnalyze = () => {
+    try {
+      localStorage.setItem('current_game_for_analysis', JSON.stringify(team));
+    } catch (error) {
+      console.error("Could not save game to local storage", error);
+       toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile salvare i dati della partita per l'analisi.",
+      });
+    }
     router.push('/analysis');
   };
 

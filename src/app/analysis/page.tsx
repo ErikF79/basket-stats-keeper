@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Team } from '@/types';
 import AnalysisDashboard from '@/components/analysis-dashboard';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,31 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function AnalysisPage() {
   const [games, setGames] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      const savedGameJSON = localStorage.getItem('current_game_for_analysis');
+      if (savedGameJSON) {
+        const savedGame = JSON.parse(savedGameJSON);
+        if (savedGame && savedGame.name && Array.isArray(savedGame.players)) {
+          setGames([savedGame]);
+        }
+        // Clean up localStorage after loading
+        localStorage.removeItem('current_game_for_analysis');
+      }
+    } catch (error) {
+      console.error("Failed to load game from local storage", error);
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: "Impossibile caricare i dati della partita precedente.",
+      });
+    }
+    setLoading(false);
+  }, [toast]);
+
 
   const handleFileImported = (importedData: Team) => {
     // Basic validation
