@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Team, Player } from '@/types';
@@ -165,7 +166,7 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
                   <Button type="button" variant="secondary">Annulla</Button>
                 </DialogClose>
                 <DialogClose asChild>
-                  <Button type="submit" onClick={handleExport}>Salva Esportazione</Button>
+                  <Button type="submit" variant="secondary" className="text-secondary-foreground" onClick={handleExport}>Salva Esportazione</Button>
                 </DialogClose>
               </DialogFooter>
             </DialogContent>
