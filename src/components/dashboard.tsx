@@ -113,17 +113,7 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
   };
   
   const handleAnalyze = () => {
-    try {
-      // Save team data to localStorage to be read by the analysis page
-      localStorage.setItem('current_game_stats', JSON.stringify(team));
-      router.push('/analysis');
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Errore",
-        description: "Impossibile salvare i dati della partita per l'analisi.",
-      });
-    }
+    router.push('/analysis');
   };
 
 
@@ -184,7 +174,7 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
             <Upload className="mr-2 h-4 w-4" />
             Importa
           </Button>
-          <Button onClick={handleAnalyze} variant="secondary" className="text-[#6D001A] font-bold">
+          <Button onClick={handleAnalyze} variant="secondary" className="text-[#6D001A] font-bold border-2 border-green-600">
             <BarChart2 className="mr-2 h-4 w-4" />
             Analizza Statistiche
           </Button>
