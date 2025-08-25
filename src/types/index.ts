@@ -3,6 +3,7 @@ export interface StatEvent {
   points?: 1 | 2 | 3;
   x: number;
   y: number;
+  quarter: number;
 }
 
 export interface PlayerStats {

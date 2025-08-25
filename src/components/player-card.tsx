@@ -8,10 +8,11 @@ import { useState } from 'react';
 
 interface PlayerCardProps {
   player: Player;
+  currentQuarter: number;
   onUpdateStats: (newStats: Player['stats']) => void;
 }
 
-export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
+export default function PlayerCard({ player, currentQuarter, onUpdateStats }: PlayerCardProps) {
   const [activeAction, setActiveAction] = useState<{ type: 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot', value?: 1 | 2 | 3 } | null>(null);
 
   const handleActionSelection = (type: 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot', value?: 1 | 2 | 3) => {
@@ -22,37 +23,37 @@ export default function PlayerCard({ player, onUpdateStats }: PlayerCardProps) {
     if (!activeAction) return;
     
     const newStats = { ...player.stats };
-    let newEvent: StatEvent;
+    let newEvent: Omit<StatEvent, 'quarter'> & { quarter?: number };
 
     switch (activeAction.type) {
       case 'point':
         if (activeAction.value) {
-          newEvent = { type: 'point', points: activeAction.value, x, y };
+          newEvent = { type: 'point', points: activeAction.value, x, y, quarter: currentQuarter };
           newStats.points += activeAction.value;
-          newStats.events.push(newEvent);
+          newStats.events.push(newEvent as StatEvent);
         }
         break;
       case 'missed_shot':
         if (activeAction.value) {
-            newEvent = { type: 'missed_shot', points: activeAction.value, x, y };
+            newEvent = { type: 'missed_shot', points: activeAction.value, x, y, quarter: currentQuarter };
             newStats.missed_shots++;
-            newStats.events.push(newEvent);
+            newStats.events.push(newEvent as StatEvent);
         }
         break;
       case 'assist':
-        newEvent = { type: 'assist', x, y };
+        newEvent = { type: 'assist', x, y, quarter: currentQuarter };
         newStats.assists++;
-        newStats.events.push(newEvent);
+        newStats.events.push(newEvent as StatEvent);
         break;
       case 'rebound':
-        newEvent = { type: 'rebound', x, y };
+        newEvent = { type: 'rebound', x, y, quarter: currentQuarter };
         newStats.rebounds++;
-        newStats.events.push(newEvent);
+        newStats.events.push(newEvent as StatEvent);
         break;
       case 'foul':
-        newEvent = { type: 'foul', x, y };
+        newEvent = { type: 'foul', x, y, quarter: currentQuarter };
         newStats.fouls++;
-        newStats.events.push(newEvent);
+        newStats.events.push(newEvent as StatEvent);
         break;
     }
     

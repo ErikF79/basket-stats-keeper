@@ -5,13 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Heatmap from '@/components/heatmap';
 import { Button } from '@/components/ui/button';
-import { Home, Upload, X } from 'lucide-react';
+import { Home, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 
 interface AnalysisDashboardProps {
@@ -19,15 +20,20 @@ interface AnalysisDashboardProps {
   onFileImported: (team: Team) => void;
 }
 
-const getFilteredEvents = (players: Player[], filter: 'all' | 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot'): StatEvent[] => {
-  let allEvents = players.flatMap(p => p.stats.events);
+const getFilteredEvents = (players: Player[], filter: 'all' | 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot', quarter: number | 'all'): StatEvent[] => {
+  let allEvents = players.flatMap(p => p.stats.events.map(e => ({ ...e, quarter: e.quarter || 1 })));
+  
+  if (quarter !== 'all') {
+      allEvents = allEvents.filter(event => event.quarter === quarter);
+  }
+
   if (filter !== 'all') {
     allEvents = allEvents.filter(event => event.type === filter);
   }
   return allEvents;
 };
 
-const calculateShootingStats = (players: Player[]) => {
+const calculateShootingStats = (players: Player[], quarter: number | 'all') => {
   const stats = {
     totalMade: 0,
     totalMissed: 0,
@@ -38,9 +44,13 @@ const calculateShootingStats = (players: Player[]) => {
     made3p: 0,
     attempted3p: 0,
   };
+  
+  let events = players.flatMap(p => p.stats.events.map(e => ({...e, quarter: e.quarter || 1})));
+  if (quarter !== 'all') {
+      events = events.filter(e => e.quarter === quarter);
+  }
 
-  players.forEach(player => {
-    player.stats.events.forEach(event => {
+  events.forEach(event => {
       if (event.type === 'point') {
         stats.totalMade++;
         if (event.points === 1) { stats.made1p++; stats.attempted1p++; }
@@ -53,12 +63,11 @@ const calculateShootingStats = (players: Player[]) => {
         if (event.points === 3) { stats.attempted3p++; }
       }
     });
-  });
 
   return stats;
 };
 
-const aggregatePlayerData = (games: Team[]) => {
+const aggregatePlayerData = (games: Team[], quarter: number | 'all') => {
     const playerMap = new Map<string, Player['stats']>();
 
     games.forEach(game => {
@@ -73,13 +82,19 @@ const aggregatePlayerData = (games: Team[]) => {
                     events: []
                 });
             }
+            
+            let eventsToProcess = player.stats.events.map(e => ({...e, quarter: e.quarter || 1}));
+            if (quarter !== 'all') {
+                eventsToProcess = eventsToProcess.filter(e => e.quarter === quarter);
+            }
+
             const aggregatedStats = playerMap.get(player.name)!;
-            aggregatedStats.points += player.stats.points;
-            aggregatedStats.assists += player.stats.assists;
-            aggregatedStats.rebounds += player.stats.rebounds;
-            aggregatedStats.fouls += player.stats.fouls;
-            aggregatedStats.missed_shots += player.stats.missed_shots;
-            aggregatedStats.events.push(...player.stats.events);
+            aggregatedStats.points += eventsToProcess.filter(e => e.type === 'point').reduce((sum, e) => sum + (e.points || 0), 0);
+            aggregatedStats.assists += eventsToProcess.filter(e => e.type === 'assist').length;
+            aggregatedStats.rebounds += eventsToProcess.filter(e => e.type === 'rebound').length;
+            aggregatedStats.fouls += eventsToProcess.filter(e => e.type === 'foul').length;
+            aggregatedStats.missed_shots += eventsToProcess.filter(e => e.type === 'missed_shot').length;
+            aggregatedStats.events.push(...eventsToProcess);
         });
     });
     
@@ -91,16 +106,17 @@ const aggregatePlayerData = (games: Team[]) => {
 };
 
 export default function AnalysisDashboard({ games, onFileImported }: AnalysisDashboardProps) {
-  const [selectedGames, setSelectedGames] = useState<string[]>(games.map(g => g.name));
+  const [selectedGames, setSelectedGames] = useState<string[]>([]);
+  const [selectedQuarter, setSelectedQuarter] = useState<number | 'all'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Aggiunge le nuove partite alla selezione senza resettare le scelte esistenti.
     const newGameNames = games.map(g => g.name);
     setSelectedGames(prevSelected => {
-      const newGamesToAdd = newGameNames.filter(name => !prevSelected.includes(name));
-      return [...prevSelected, ...newGamesToAdd];
+      const currentSelected = new Set(prevSelected);
+      newGameNames.forEach(name => currentSelected.add(name));
+      return Array.from(currentSelected);
     });
   }, [games]);
 
@@ -141,9 +157,9 @@ export default function AnalysisDashboard({ games, onFileImported }: AnalysisDas
   };
   
   const filteredGames = useMemo(() => games.filter(g => selectedGames.includes(g.name)), [games, selectedGames]);
-  const aggregatedPlayers = useMemo(() => aggregatePlayerData(filteredGames), [filteredGames]);
+  const aggregatedPlayers = useMemo(() => aggregatePlayerData(filteredGames, selectedQuarter), [filteredGames, selectedQuarter]);
   
-  const shootingStats = calculateShootingStats(aggregatedPlayers);
+  const shootingStats = calculateShootingStats(aggregatedPlayers, selectedQuarter);
   const totalShots = shootingStats.totalMade + shootingStats.totalMissed;
   
   const shootingPercentageData = [
@@ -158,19 +174,28 @@ export default function AnalysisDashboard({ games, onFileImported }: AnalysisDas
 
   if (games.length === 0) {
      return (
-        <>
-            <Button onClick={handleImportClick} variant="secondary" className="text-secondary-foreground">
-                <Upload className="mr-2 h-4 w-4" />
-                Importa Partita
-            </Button>
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange}
-                className="hidden"
-                accept=".json"
-            />
-        </>
+        <div className="flex flex-col items-center justify-center min-h-screen text-center">
+            <h2 className="text-2xl font-bold mb-4">Nessun dato da analizzare</h2>
+            <p className="text-muted-foreground mb-6">
+            Carica una partita salvata per iniziare l'analisi.
+            </p>
+            <div className="flex gap-4">
+                <Button onClick={handleImportClick} variant="secondary" className="text-secondary-foreground">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Importa Partita
+                </Button>
+                <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept=".json"
+                />
+                 <Button asChild variant="outline">
+                    <Link href="/">Torna alla Home</Link>
+                </Button>
+            </div>
+      </div>
      )
   }
 
@@ -205,8 +230,8 @@ export default function AnalysisDashboard({ games, onFileImported }: AnalysisDas
               />
         </div>
       </header>
-
-       <Card>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+       <Card className="md:col-span-2">
         <CardHeader>
           <CardTitle>Selezione Partite</CardTitle>
           <CardDescription>
@@ -231,6 +256,29 @@ export default function AnalysisDashboard({ games, onFileImported }: AnalysisDas
           ))}
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+            <CardTitle>Filtro per Quarto</CardTitle>
+            <CardDescription>Analizza i dati di un quarto specifico.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Select onValueChange={(value) => setSelectedQuarter(value === 'all' ? 'all' : parseInt(value))} defaultValue="all">
+                <SelectTrigger>
+                    <SelectValue placeholder="Seleziona un quarto" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Tutti i Quarti</SelectItem>
+                    <SelectItem value="1">Quarto 1</SelectItem>
+                    <SelectItem value="2">Quarto 2</SelectItem>
+                    <SelectItem value="3">Quarto 3</SelectItem>
+                    <SelectItem value="4">Quarto 4</SelectItem>
+                    <SelectItem value="5">OT 1</SelectItem>
+                    <SelectItem value="6">OT 2</SelectItem>
+                </SelectContent>
+            </Select>
+        </CardContent>
+      </Card>
+    </div>
 
 
       <Tabs defaultValue="overview">
@@ -244,7 +292,7 @@ export default function AnalysisDashboard({ games, onFileImported }: AnalysisDas
                 <CardHeader>
                 <CardTitle>Statistiche Aggregate per Giocatore</CardTitle>
                 <CardDescription>
-                    Riepilogo completo delle prestazioni individuali sulle partite selezionate.
+                    Riepilogo completo delle prestazioni individuali sulle partite e il quarto selezionati.
                 </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -352,22 +400,22 @@ export default function AnalysisDashboard({ games, onFileImported }: AnalysisDas
                     <TabsTrigger value="missed_shot">Tiri Sbagliati</TabsTrigger>
                 </TabsList>
                 <TabsContent value="all">
-                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'all')} title="Mappa di tutti gli eventi" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'all', selectedQuarter)} title="Mappa di tutti gli eventi" />
                 </TabsContent>
                  <TabsContent value="point">
-                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'point')} title="Mappa dei Punti" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'point', selectedQuarter)} title="Mappa dei Punti" />
                 </TabsContent>
                  <TabsContent value="assist">
-                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'assist')} title="Mappa degli Assist" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'assist', selectedQuarter)} title="Mappa degli Assist" />
                 </TabsContent>
                  <TabsContent value="rebound">
-                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'rebound')} title="Mappa dei Rimbalzi" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'rebound', selectedQuarter)} title="Mappa dei Rimbalzi" />
                 </TabsContent>
                  <TabsContent value="foul">
-                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'foul')} title="Mappa dei Falli" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'foul', selectedQuarter)} title="Mappa dei Falli" />
                 </TabsContent>
                  <TabsContent value="missed_shot">
-                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'missed_shot')} title="Mappa dei Tiri Sbagliati" />
+                    <Heatmap events={getFilteredEvents(aggregatedPlayers, 'missed_shot', selectedQuarter)} title="Mappa dei Tiri Sbagliati" />
                 </TabsContent>
             </Tabs>
         </TabsContent>

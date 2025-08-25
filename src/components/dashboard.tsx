@@ -5,7 +5,7 @@ import type { Team, Player } from '@/types';
 import PlayerCard from '@/components/player-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Users, Download, Upload, BarChart2 } from 'lucide-react';
+import { RefreshCw, Users, Download, Upload, BarChart2, Minus, Plus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -32,6 +32,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStats, onImportTeam }: DashboardProps) {
+  const [currentQuarter, setCurrentQuarter] = useState(1);
   const totalPoints = team.players.reduce((sum, player) => sum + player.stats.points, 0);
   const totalAssists = team.players.reduce((sum, player) => sum + player.stats.assists, 0);
   const totalRebounds = team.players.reduce((sum, player) => sum + player.stats.rebounds, 0);
@@ -198,6 +199,24 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
           />
         </div>
       </header>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Controllo Partita</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center gap-4">
+            <p className="text-sm text-muted-foreground">Quarto di Gioco</p>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setCurrentQuarter(q => Math.max(1, q - 1))}>
+                    <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-2xl font-bold text-primary w-10 text-center">{currentQuarter}</span>
+                <Button variant="outline" size="icon" onClick={() => setCurrentQuarter(q => q + 1)}>
+                    <Plus className="h-4 w-4" />
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -232,6 +251,7 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
             <PlayerCard 
               key={player.id}
               player={player}
+              currentQuarter={currentQuarter}
               onUpdateStats={(newStats) => onUpdateStats(player.id, newStats)}
             />
           ))}
