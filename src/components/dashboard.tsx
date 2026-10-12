@@ -1,12 +1,10 @@
-
 'use client';
 
 import type { Team, Player } from '@/types';
 import PlayerCard from '@/components/player-card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, Users, Download, Upload, BarChart2, Minus, Plus } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,21 +16,42 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { saveAnalysisHandoff } from '@/lib/storage';
+import { computeAttackingSide, sideArrow, sideLabel } from '@/lib/rebounds';
 
 interface DashboardProps {
   team: Team;
+  currentQuarter: number;
+  onQuarterChange: (quarter: number) => void;
   onUpdateStats: (playerId: string, newStats: Player['stats']) => void;
   onResetApp: () => void;
   onResetStats: () => void;
   onImportTeam: (team: Team) => void;
 }
 
-export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStats, onImportTeam }: DashboardProps) {
-  const [currentQuarter, setCurrentQuarter] = useState(1);
+export default function Dashboard({
+  team,
+  currentQuarter,
+  onQuarterChange,
+  onUpdateStats,
+  onResetApp,
+  onResetStats,
+  onImportTeam,
+}: DashboardProps) {
   const totalPoints = team.players.reduce((sum, player) => sum + player.stats.points, 0);
   const totalAssists = team.players.reduce((sum, player) => sum + player.stats.assists, 0);
   const totalRebounds = team.players.reduce((sum, player) => sum + player.stats.rebounds, 0);
@@ -43,16 +62,25 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
   const { toast } = useToast();
   const router = useRouter();
 
+  // Attacking half inferred from the shots of the current quarter (fallback: whole game).
+  const attackingSide = useMemo(() => {
+    const allEvents = team.players.flatMap(player => player.stats.events);
+    const quarterEvents = allEvents.filter(event => event.quarter === currentQuarter);
+    return computeAttackingSide(quarterEvents) ?? computeAttackingSide(allEvents);
+  }, [team, currentQuarter]);
+
+  const quarterLabel = currentQuarter <= 4 ? `Q${currentQuarter}` : `OT${currentQuarter - 4}`;
+
   const handleExport = () => {
     if (!exportFileName.trim()) {
-        toast({
-            variant: "destructive",
-            title: "Nome file non valido",
-            description: "Per favore, inserisci un nome per il file.",
-        });
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Nome file non valido',
+        description: 'Per favore, inserisci un nome per il file.',
+      });
+      return;
     }
-    
+
     const jsonString = JSON.stringify(team, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -63,10 +91,10 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-     toast({
-        title: "Esportazione completata",
-        description: "Le statistiche sono state salvate in un file JSON.",
-      });
+    toast({
+      title: 'Esportazione completata',
+      description: 'Le statistiche sono state salvate in un file JSON.',
+    });
   };
 
   const handleImportClick = () => {
@@ -78,181 +106,204 @@ export default function Dashboard({ team, onUpdateStats, onResetApp, onResetStat
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       try {
         const text = e.target?.result;
         if (typeof text === 'string') {
-          const importedData = JSON.parse(text);
-          // Add missed_shots to older JSON files if it doesn't exist
-          const sanitizedTeam = {
-            ...importedData,
-            players: importedData.players.map((p: Player) => ({
-              ...p,
-              stats: {
-                points: 0,
-                assists: 0,
-                rebounds: 0,
-                fouls: 0,
-                missed_shots: 0,
-                events: [],
-                ...p.stats
-              }
-            }))
-          };
-          onImportTeam(sanitizedTeam);
+          onImportTeam(JSON.parse(text));
         }
       } catch (error) {
         toast({
-          variant: "destructive",
-          title: "Errore di importazione",
-          description: "Impossibile analizzare il file JSON. Assicurati che sia formattato correttamente.",
+          variant: 'destructive',
+          title: 'Errore di importazione',
+          description: 'Impossibile analizzare il file JSON. Assicurati che sia formattato correttamente.',
         });
       }
     };
     reader.readAsText(file);
-    // Reset the input value to allow importing the same file again
     event.target.value = '';
   };
-  
+
   const handleAnalyze = () => {
-    try {
-      localStorage.setItem('current_game_for_analysis', JSON.stringify(team));
-    } catch (error) {
-      console.error("Could not save game to local storage", error);
-       toast({
-        variant: "destructive",
-        title: "Errore",
+    if (!saveAnalysisHandoff(team)) {
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
         description: "Impossibile salvare i dati della partita per l'analisi.",
       });
+      return;
     }
     router.push('/analysis');
   };
 
+  const totals = [
+    { label: 'Punti', value: totalPoints, highlight: true },
+    { label: 'Assist', value: totalAssists },
+    { label: 'Rimbalzi', value: totalRebounds },
+    { label: 'Falli', value: totalFouls },
+  ];
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">{team.name}</h1>
-          <p className="mt-2 text-lg text-muted-foreground">Statistiche di Gioco in Tempo Reale</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-           <Button onClick={onResetStats} variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Nuova Partita
-          </Button>
-          <Button onClick={onResetApp} variant="destructive">
-            <Users className="mr-2 h-4 w-4" />
-            Cambia Squadra
-          </Button>
-          <Dialog>
-            <DialogTrigger asChild>
-               <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Esporta
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Esporta Statistiche</DialogTitle>
-                <DialogDescription>
-                  Inserisci un nome per il file di esportazione. Verrà aggiunta l'estensione .json automaticamente.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="filename" className="text-right">
-                    Nome File
-                  </Label>
-                  <Input
-                    id="filename"
-                    value={exportFileName}
-                    onChange={(e) => setExportFileName(e.target.value)}
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary">Annulla</Button>
-                </DialogClose>
-                <DialogClose asChild>
-                  <Button type="submit" variant="secondary" className="text-secondary-foreground" onClick={handleExport}>Salva Esportazione</Button>
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          <Button onClick={handleImportClick} variant="outline">
-            <Upload className="mr-2 h-4 w-4" />
-            Importa
-          </Button>
-          <Button onClick={handleAnalyze} variant="secondary" className="text-[#6D001A] font-bold border-2 border-green-600">
-            <BarChart2 className="mr-2 h-4 w-4" />
-            Analizza Statistiche
-          </Button>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange}
-            className="hidden"
-            accept=".json"
-          />
+    <div className="space-y-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-bold tracking-tight text-primary sm:text-3xl">{team.name}</h1>
+          <p className="text-sm text-muted-foreground">Statistiche di gioco in tempo reale</p>
         </div>
       </header>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Controllo Partita</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center gap-4">
-            <p className="text-sm text-muted-foreground">Quarto di Gioco</p>
-            <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => setCurrentQuarter(q => Math.max(1, q - 1))}>
-                    <Minus className="h-4 w-4" />
-                </Button>
-                <span className="text-2xl font-bold text-primary w-10 text-center">{currentQuarter}</span>
-                <Button variant="outline" size="icon" onClick={() => setCurrentQuarter(q => q + 1)}>
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Totali di Squadra</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-3xl font-bold text-primary">{totalPoints}</p>
-              <p className="text-sm text-muted-foreground">Punti</p>
+      {/* Sticky scoreboard */}
+      <div className="sticky top-0 z-30 -mx-3 border-b bg-background/85 px-3 py-2 backdrop-blur sm:-mx-4 sm:px-4 md:-mx-8 md:px-8">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => onQuarterChange(Math.max(1, currentQuarter - 1))}
+              aria-label="Quarto precedente"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <div className="w-14 text-center">
+              <div className="text-lg font-bold leading-none text-primary">{quarterLabel}</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">quarto</div>
             </div>
-            <div>
-              <p className="text-3xl font-bold">{totalAssists}</p>
-              <p className="text-sm text-muted-foreground">Assist</p>
-            </div>
-             <div>
-              <p className="text-3xl font-bold">{totalRebounds}</p>
-              <p className="text-sm text-muted-foreground">Rimbalzi</p>
-            </div>
-             <div>
-              <p className="text-3xl font-bold">{totalFouls}</p>
-              <p className="text-sm text-muted-foreground">Falli</p>
-            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => onQuarterChange(currentQuarter + 1)}
+              aria-label="Quarto successivo"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="flex items-center gap-4">
+            {totals.map(item => (
+              <div key={item.label} className="text-center">
+                <div className={`text-xl font-bold leading-none ${item.highlight ? 'text-primary' : ''}`}>
+                  {item.value}
+                </div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="w-full">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Nuova Partita
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Iniziare una nuova partita?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tutte le statistiche della partita corrente verranno azzerate. La squadra resta invariata.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={onResetStats}>Azzera statistiche</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="w-full">
+              <Users className="mr-2 h-4 w-4" />
+              Cambia Squadra
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cambiare squadra?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tornerai alla schermata di configurazione e la partita corrente verrà eliminata.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={onResetApp}>Cambia squadra</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="w-full">
+              <Download className="mr-2 h-4 w-4" />
+              Esporta
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Esporta statistiche</DialogTitle>
+              <DialogDescription>
+                Inserisci un nome per il file. L&apos;estensione .json verrà aggiunta automaticamente.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2 py-2">
+              <Label htmlFor="filename">Nome file</Label>
+              <Input
+                id="filename"
+                value={exportFileName}
+                onChange={e => setExportFileName(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Annulla
+                </Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button type="button" onClick={handleExport}>
+                  Salva esportazione
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Button onClick={handleImportClick} variant="outline" className="w-full">
+          <Upload className="mr-2 h-4 w-4" />
+          Importa
+        </Button>
+        <input ref={fileInputRef} type="file" onChange={handleFileChange} className="hidden" accept=".json" />
+
+        <Button onClick={handleAnalyze} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+          <BarChart2 className="mr-2 h-4 w-4" />
+          Analizza
+        </Button>
+      </div>
 
       <div>
-        <h2 className="text-2xl font-semibold mb-4">Statistiche Giocatori</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xl font-semibold">Statistiche giocatori</h2>
+          <span className="text-sm text-muted-foreground">
+            Metà offensiva rilevata:{' '}
+            <span className="font-semibold text-primary">
+              {attackingSide ? `${sideArrow(attackingSide)} ${sideLabel(attackingSide)}` : 'non disponibile'}
+            </span>
+          </span>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {team.players.map(player => (
-            <PlayerCard 
+            <PlayerCard
               key={player.id}
               player={player}
               currentQuarter={currentQuarter}
-              onUpdateStats={(newStats) => onUpdateStats(player.id, newStats)}
+              attackingSide={attackingSide}
+              onUpdateStats={newStats => onUpdateStats(player.id, newStats)}
             />
           ))}
         </div>

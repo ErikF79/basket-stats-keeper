@@ -1,5 +1,9 @@
+export type StatEventType = 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot';
+
+export type CourtSide = 'left' | 'right';
+
 export interface StatEvent {
-  type: 'point' | 'assist' | 'rebound' | 'foul' | 'missed_shot';
+  type: StatEventType;
   points?: 1 | 2 | 3;
   x: number;
   y: number;
@@ -22,6 +26,6 @@ export interface Player {
 }
 
 export interface Team {
-  name:string;
+  name: string;
   players: Player[];
 }

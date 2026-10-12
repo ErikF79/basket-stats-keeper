@@ -43,3 +43,11 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# local-only artifacts (not part of the deployed app)
+/.agents/
+/.vscode/
+/Screenshot/
+/Json/
+/studio.json
+*.docx

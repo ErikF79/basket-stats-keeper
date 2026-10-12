@@ -132,7 +132,7 @@ export default function TeamSetup({ onSetupComplete }: TeamSetupProps) {
             </div>
           </CardContent>
           <CardFooter className="flex-col gap-2">
-            <Button type="submit" className="w-full bg-secondary hover:bg-secondary/80 text-[#6D001A] font-bold">
+            <Button type="submit" size="lg" className="w-full font-semibold">
               <Users className="mr-2 h-4 w-4" />
               Inizia a Tracciare le Statistiche
             </Button>

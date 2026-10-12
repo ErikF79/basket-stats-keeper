@@ -1,21 +1,29 @@
 'use client';
-import type { StatEvent } from '@/types';
+
+import type { StatEvent, StatEventType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Image from 'next/image';
+import { withBasePath } from '@/lib/config';
 
 interface HeatmapProps {
   events: StatEvent[];
   title: string;
 }
 
-const eventColorMap = {
-  point: 'bg-green-500',   // Verde per i punti
-  assist: 'bg-blue-500',    // Blu per gli assist
-  rebound: 'bg-yellow-500', // Giallo per i rimbalzi
-  foul: 'bg-red-500',       // Rosso per i falli
-  missed_shot: 'bg-orange-500', // Arancione per tiri sbagliati
+const eventColorMap: Record<StatEventType, string> = {
+  point: 'bg-green-500',
+  assist: 'bg-blue-500',
+  rebound: 'bg-yellow-500',
+  foul: 'bg-red-500',
+  missed_shot: 'bg-orange-500',
 };
 
+const eventLabelMap: Record<StatEventType, string> = {
+  point: 'Punti',
+  assist: 'Assist',
+  rebound: 'Rimbalzi',
+  foul: 'Falli',
+  missed_shot: 'Tiri Sbagliati',
+};
 
 export default function Heatmap({ events, title }: HeatmapProps) {
   return (
@@ -24,32 +32,47 @@ export default function Heatmap({ events, title }: HeatmapProps) {
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative w-full aspect-[4/3]">
-          <Image
-            src="/basketball-court.svg"
+        <div className="relative w-full">
+          <img
+            src={withBasePath('/basketball-court.svg')}
             alt="Campo da basket"
-            layout="fill"
-            objectFit="contain"
-            data-ai-hint="basketball court"
+            draggable={false}
+            className="w-full rounded-lg border"
           />
           {events.map((event, index) => {
             const colorClass = eventColorMap[event.type] || 'bg-gray-500';
+            const label = eventLabelMap[event.type] || event.type;
             return (
               <div
                 key={index}
-                className={`absolute w-3 h-3 rounded-full border border-white/50 transform -translate-x-1/2 -translate-y-1/2 opacity-80 ${colorClass}`}
+                className={`absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70 opacity-80 ${colorClass}`}
                 style={{ left: `${event.x}%`, top: `${event.y}%` }}
-                title={`${event.type}${event.points ? ` (${event.points} pts)`: ''}`}
-              ></div>
+                title={`${label}${event.points ? ` (${event.points} pt)` : ''} - Q${event.quarter}`}
+              />
             );
           })}
         </div>
-        <div className="flex justify-center flex-wrap gap-4 mt-4 text-xs">
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-green-500"></div>Punti</div>
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-blue-500"></div>Assist</div>
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-yellow-500"></div>Rimbalzi</div>
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-red-500"></div>Falli</div>
-          <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-orange-500"></div>Tiri Sbagliati</div>
+        <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-sm bg-green-500" />
+            Punti
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-sm bg-blue-500" />
+            Assist
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-sm bg-yellow-500" />
+            Rimbalzi
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-sm bg-red-500" />
+            Falli
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-sm bg-orange-500" />
+            Tiri Sbagliati
+          </div>
         </div>
       </CardContent>
     </Card>
